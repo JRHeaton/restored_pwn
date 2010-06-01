@@ -4,10 +4,14 @@ SDK=$(PLATFORM)/Developer/SDKs/iPhoneOS$(SDKVER).sdk
 CC=$(PLATFORM)/Developer/usr/bin/gcc-4.2
 STRIP=$(PLATFORM)/Developer/usr/bin/strip
 
-RESTORED_PWN_SOURCES=main.c log.c lowlevel.c framebuffer.c
+RESTORED_PWN_SOURCES=main.c log.c framebuffer.c nor.c registry.c 
 
-CFLAGS=-arch armv6 -isysroot $(SDK)
-LDFLAGS=-framework CoreFoundation -framework IOKit
+CFLAGS=-arch armv6 -I./include/ -isysroot $(SDK)
+LDFLAGS=-F$(SDK)/System/Library/PrivateFrameworks \
+	-framework CoreFoundation \
+	-framework IOKit \
+	-framework IOMobileFramebuffer \
+	-framework CoreGraphics \
 
 PROG=restored_external
 
@@ -17,9 +21,6 @@ $(PROG):
 	$(CC) $(CFLAGS) $(RESTORED_PWN_SOURCES) -o $(PROG) $(LDFLAGS)
 	$(STRIP) $(PROG)
 	ldid -S $(PROG)
-
-link:
-	sudo ln -s /Developer/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/IOKit.framework/Headers $(SDK)/usr/include/IOKit
 
 clean:
 	rm -f $(PROG)

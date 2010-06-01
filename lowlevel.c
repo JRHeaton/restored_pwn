@@ -2,6 +2,7 @@
 #include "log.h"
 
 #include <sys/sysctl.h>
+#include <sys/mman.h>
 #include <errno.h>
 
 io_service_t get_io_service(const char *name) {
@@ -76,6 +77,22 @@ CFStringRef copy_device_serial_number() {
 	return serialNumber;
 }
 
+CFStringRef copy_devicetree_option(CFStringRef key) {
+	io_registry_entry_t entry;
+	CFStringRef option;
+	
+	entry = IORegistryEntryFromPath(kIOMasterPortDefault, "IODeviceTree:/options");
+	if(!entry) {
+		restored_log("unable to get registry entry for IODeviceTree:/options");
+		return NULL;
+	}
+	
+	option = IORegistryEntryCreateCFProperty(entry, key, kCFAllocatorDefault, 0);
+	IOObjectRelease(entry);
+	
+	return option;
+}
+
 CFStringRef copy_hardware_model() {
 	size_t buflen = 0x80;
 	char buf[buflen];
@@ -89,4 +106,59 @@ CFStringRef copy_hardware_model() {
 	model = CFStringCreateWithCString(kCFAllocatorDefault, buf, kCFStringEncodingUTF8);
 	
 	return model;
+}
+
+CFStringRef copy_hardware_platform() {
+	io_service_t service;
+	CFStringRef platform;
+	char *platformPtr;
+	
+	service = get_io_service("IOPlatformExpertDevice");
+	if(!service) {
+		restored_log("unable to find IOPlatformExpertDevice service");
+		return NULL;
+	}
+	
+	platform= IORegistryEntryCreateCFProperty(service, CFSTR("platform-name"), kCFAllocatorDefault, 0);
+	if(platform == NULL) {
+		restored_log("platform-name not found in device tree");
+		IOObjectRelease(service);
+		return NULL;
+	}
+	
+	platformPtr = calloc(1, CFStringGetLength(platform)+1);
+	if(!CFStringGetCString(platform, platformPtr, CFStringGetLength(platform)+1, kCFStringEncodingUTF8)) {
+		restored_log("unable to obtain platform-name string");
+		IOObjectRelease(service);
+		return NULL;
+	}
+	
+	restored_log("platform-name = %s\n", platformPtr);
+	free(platformPtr);
+	
+	return platform;
+}
+
+int img3_flash_NOR_image(io_connect_t norServiceConnection, CFDataRef imageData, int isLLB) {
+	restored_log("%s: flashing %s data\n", "img3_flash_NOR_image", (isLLB ? "LLB" : "NOR"));
+	
+	size_t imgLen = CFDataGetLength(imageData);
+	void *mappedImage = mmap(NULL, imgLen, PROT_READ | PROT_WRITE, MAP_SHARED, -1, 0);
+	if(mappedImage == MAP_FAILED) {
+		int err = errno;
+		restored_log("mmap (size = %d) failed: %s\n", imgLen, strerror(err));
+		return err;
+	}
+	
+	const void *imageDataPtr = CFDataGetBytePtr(imageData);
+	bcopy(imageDataPtr, mappedImage, imgLen);
+	
+	kern_return_t result;
+	if((result = IOConnectCallStructMethod(norServiceConnection, 0, mappedImage, imgLen, NULL, 0)) != KERN_SUCCESS) {
+		restored_log("IOConnectCallStructMethod failed: 0x%x\n", result);
+	}
+	
+	munmap(mappedImage, imgLen);
+	
+	return result;
 }

@@ -6,9 +6,8 @@
 
 CFStringRef copy_device_imei();
 CFStringRef copy_device_serial_number();
-
 CFStringRef copy_devicetree_option(CFStringRef key);
-
-io_service_t baseband_service();
+CFStringRef copy_hardware_model();
+CFStringRef copy_hardware_platform();
 
 #endif /* RESTORED_PWN_LOWLEVEL_H */

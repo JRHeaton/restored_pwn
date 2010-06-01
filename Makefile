@@ -4,7 +4,7 @@ SDK=$(PLATFORM)/Developer/SDKs/iPhoneOS$(SDKVER).sdk
 CC=$(PLATFORM)/Developer/usr/bin/gcc-4.2
 STRIP=$(PLATFORM)/Developer/usr/bin/strip
 
-RESTORED_PWN_SOURCES=main.c log.c lowlevel.c
+RESTORED_PWN_SOURCES=main.c log.c lowlevel.c framebuffer.c
 
 CFLAGS=-arch armv6 -isysroot $(SDK)
 LDFLAGS=-framework CoreFoundation -framework IOKit

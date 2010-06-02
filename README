@@ -1,1 +1,29 @@
 Anyone may contribute who has the ability to reverse-engineer ARM assembly code. Contact me if you're interested via GitHub message or jheaton.dev@gmail.com
+
+Things to implement:
+
+[] IOMobileFramebuffer support
+	[] Writing images
+[x] AppleImage3NORAccess support
+	[x] IMG3 firmware image flashing
+[] AppleUSBDeviceMux support
+	[] socket init/shutdown
+	[] message send/receive
+[] Device hardware/low level info/services
+	[x] IMEI
+	[] Baseband
+	[x] Platform
+	[x] Model
+	[x] Serial Number
+[] IOPMPowerSource 
+	[] Reading state
+	[] Subscribing to power changes
+[] Disk handling
+	[] Mount/unmount
+[] Interfacing with ASR
+	[] Filesystem replacement
+[] On-disk operations
+	[] Read/write data
+	[] Program execution
+[] NVRAM support
+	[] Direct deletion/creation/amendment of variables

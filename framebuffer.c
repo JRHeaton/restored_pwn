@@ -1,4 +1,5 @@
 #include <restored_pwn/framebuffer.h>
+#include <IOMobileFramebuffer/IOMobileFramebuffer.h>
 #include <IOKit/IOKitLib.h>
 #include <string.h>
 
@@ -8,6 +9,7 @@ void *framebuffer_open() {
 	io_service_t service;
 	kern_return_t result;
 	io_connect_t connect;
+	io_name_t fb_name;
 	
 	matching = IOServiceMatching("IOMobileFramebuffer");
 	if(!IOServiceGetMatchingServices(kIOMasterPortDefault, matching, &iterator)) {
@@ -18,19 +20,18 @@ void *framebuffer_open() {
 	}
 	
 	while(service = IOIteratorNext(iterator)) {
-		io_name_t class_name;
-		if((result = IOObjectGetClass(service, class_name)) != KERN_SUCCESS) {
+		if((result = IOObjectGetClass(service, fb_name)) != KERN_SUCCESS) {
 			restored_log("unable to get name for service: 0x%x\n", result);
 			IOObjectRelease(service);
 			continue;
 		}
 		
-		if(strstr(class_name, "CLCD") == NULL) {
+		if(strstr(fb_name, "CLCD") == NULL) {
 			IOObjectRelease(service);
 			continue;
 		}
 		
-		restored_log("found suitable IOMobileFramebuffer: %s\n", class_name);
+		restored_log("found suitable IOMobileFramebuffer: %s\n", fb_name);
 		
 		if((result = IOMobileFramebufferOpen(service, mach_task_self(), 0, &connect)) != KERN_SUCCESS) {
 			restored_log("unable to open framebuffer: 0x%x\n", result);
@@ -39,4 +40,19 @@ void *framebuffer_open() {
 		
 		
 	}
+	
+	if(!service) {
+		restored_log("unable to get display service\n");
+		// ***BAIL OUT
+	}
+	
+	restored_log("found suitable framebuffer: %s\n", fb_name);
+	IOObjectRelease(iterator);
+	
+	if((result = IOMobileFramebufferOpen(service, mach_task_self(), 0, &connect)) != KERN_SUCCESS) {
+		restored_log("unable to open framebuffer: 0x%x\n", result);
+		// ***BAIL OUT
+	}
+	
+	
 }

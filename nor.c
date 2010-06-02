@@ -8,7 +8,7 @@ int img3_flash_NOR_image(io_connect_t norServiceConnection, CFDataRef imageData,
 	restored_log("%s: flashing %s data\n", "img3_flash_NOR_image", (isLLB ? "LLB" : "NOR"));
 	
 	size_t imgLen = CFDataGetLength(imageData);
-	void *mappedImage = mmap(NULL, imgLen, PROT_READ | PROT_WRITE, MAP_SHARED, -1, 0);
+	void *mappedImage = mmap(NULL, imgLen, PROT_READ | PROT_WRITE, MAP_ANON | VM_FLAGS_PURGABLE, -1, 0);
 	if(mappedImage == MAP_FAILED) {
 		int err = errno;
 		restored_log("mmap (size = %d) failed: %s\n", imgLen, strerror(err));
